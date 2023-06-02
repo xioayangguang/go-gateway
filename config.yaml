@@ -1,0 +1,15 @@
+# 调试模式
+debug: true
+# 网关地址websocket   对外暴露
+gateway: "0.0.0.0:7272"
+
+# 内部通讯地址  Gateway所在服务器的内网IP  本机ip，分布式部署时使用内网ip
+gatewayInternal: "127.0.0.1:7273"
+
+# 注册中心
+register: "127.0.0.1:7274"
+
+# 通讯秘钥
+secret: ""
+
+
