@@ -1,4 +1,4 @@
-package tcp_error
+package error
 
 import (
 	"fmt"

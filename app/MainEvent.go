@@ -1,16 +1,15 @@
-package apps
+package app
 
 import (
 	"goworker/lib"
 	"log"
 )
 
-// 此文件实现自己的业务逻辑
+// MainEvent 此文件实现自己的业务逻辑
 type MainEvent struct {
 }
 
 func (*MainEvent) OnWebSocketConnect(clientId string, header []byte) {
-
 }
 
 func (*MainEvent) OnStart() {

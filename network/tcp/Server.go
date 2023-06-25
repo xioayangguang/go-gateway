@@ -2,7 +2,7 @@ package tcp
 
 import (
 	"fmt"
-	error2 "goworker/network/tcp_error"
+	error2 "goworker/network/error"
 	"log"
 	"net"
 )

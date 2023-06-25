@@ -40,6 +40,6 @@ func (t *TextProtocol) Read(conn net.Conn) ([]byte, error) {
 
 func (t *TextProtocol) Write(conn net.Conn, msg []byte) error {
 	msg = append(msg, t.delim)
-	_, _ = conn.Write(msg)
-	return nil
+	_, err := conn.Write(msg)
+	return err
 }

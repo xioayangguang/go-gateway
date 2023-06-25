@@ -29,9 +29,7 @@ func (self *PackageLenProtocol) Read(conn net.Conn) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	PackageLen := uint32(binary.BigEndian.Uint32(buf))
-
 	var data = make([]byte, PackageLen-4)
 	_, err = conn.Read(data)
 	if err != nil {
@@ -46,6 +44,6 @@ func (*PackageLenProtocol) Write(conn net.Conn, msg []byte) error {
 	packLen := len(msg) + 4
 	binary.BigEndian.PutUint32(buf32, uint32(packLen))
 	msg = append(buf32, msg...)
-	_, _ = conn.Write(msg)
-	return nil
+	_, err := conn.Write(msg)
+	return err
 }

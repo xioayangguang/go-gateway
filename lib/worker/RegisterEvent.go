@@ -6,7 +6,9 @@ import (
 	"goworker/lib"
 	"goworker/network"
 	"goworker/network/tcp"
+	"goworker/network/tcpclient"
 	"log"
+	"time"
 )
 
 type WorkerConnect struct {
@@ -47,6 +49,7 @@ func (r *RegisterEvent) OnMessage(c network.Connect, message []byte) {
 	strMsg := string(message)
 	fmt.Println(strMsg)
 	msgBA := BroadcastAddresses{}
+	log.Printf("worker  Register OnMessage:%s:%v Data:%s ", network.Long2Ip(c.GetIp()), c.GetPort(), string(message))
 	err := json.Unmarshal([]byte(strMsg), &msgBA)
 	if err != nil {
 		return
@@ -83,12 +86,15 @@ func (r *RegisterEvent) checkGatewayConnections() {
 	}
 }
 
-/*
-连接成功 or 失败
-*/
+// UpdateGatewayConnections 连接成功 or 失败
 func (r *RegisterEvent) UpdateGatewayConnections(addr string, con network.Connect) {
 	if con != nil {
 		lib.GatewayList.GatewayCons[addr] = con
+		client, err := tcpclient.NewClient(addr, 1, 10, 100*time.Millisecond, 10*time.Millisecond, time.Second)
+		if err != nil {
+			log.Fatal(err)
+		}
+		lib.GatewayList.ConnectionPool[addr] = client
 	} else {
 		delete(lib.GatewayList.GatewayCons, addr)
 	}

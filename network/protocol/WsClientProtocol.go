@@ -118,8 +118,8 @@ func (w *WsProtocol) Write(conn net.Conn, msg []byte) error {
 		msg[i] ^= MaskingKey[i%4]
 	}
 	sendByte = append(sendByte, msg...)
-	_, _ = conn.Write(sendByte)
-	return nil
+	_, err := conn.Write(sendByte)
+	return err
 }
 
 // 读取指定长度数据

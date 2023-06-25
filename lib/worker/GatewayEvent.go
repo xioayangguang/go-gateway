@@ -39,7 +39,7 @@ func (g *GatewayEvent) OnStart(listen network.ListenTcp) {
 	}
 }
 
-// gateway 连接
+// OnConnect gateway 连接
 func (g *GatewayEvent) OnConnect(gateway network.Connect) {
 	g.registerEvent.UpdateGatewayConnections(g.GetGatewayAddress(), gateway)
 	msg := WorkerKey{

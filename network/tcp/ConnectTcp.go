@@ -1,19 +1,23 @@
 package tcp
 
 import (
+	"encoding/binary"
 	"goworker/network"
 	"net"
 	"regexp"
 )
 
 type ConnectTcp struct {
-	ip     uint32
-	id     uint32
-	uid    string
-	url    *network.Url
-	conn   net.Conn
-	Listen network.ListenTcp
-	header network.Header
+	ip uint32
+	id uint32
+	//clientId string
+	userId   uint64
+	groupsId map[uint64]struct{}
+	url      *network.Url
+	conn     net.Conn
+	Listen   network.ListenTcp
+	header   network.Header
+	extData  []byte
 }
 
 func (c *ConnectTcp) GetIp() uint32 {
@@ -51,32 +55,36 @@ func (c *ConnectTcp) Id() uint32 {
 	return c.id
 }
 
-func (c *ConnectTcp) SetUid(uid string) {
-	c.uid = uid
-}
-
-func (c *ConnectTcp) Uid() string {
-	return c.uid
-}
+//func (c *ConnectTcp) SetClientId(uid string) {
+//	c.clientId = uid
+//}
+//
+//func (c *ConnectTcp) ClientId() string {
+//	return c.clientId
+//}
 
 func (c *ConnectTcp) Url() *network.Url {
 	return c.url
 }
 
-func (c *ConnectTcp) SendByte(msg []byte) bool {
-	err := c.Listen.Protocol().Write(c.conn, msg)
+func (c *ConnectTcp) SendByte(msg []byte) error {
+	var buf32 = make([]byte, 4)
+	binary.BigEndian.PutUint32(buf32, uint32(len(msg)))
+	err := c.Listen.Protocol().Write(c.conn, append(buf32, msg...))
 	if err != nil {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
-func (c *ConnectTcp) SendString(msg string) bool {
-	err := c.Listen.Protocol().Write(c.conn, []byte(msg))
+func (c *ConnectTcp) SendString(msg string) error {
+	var buf32 = make([]byte, 4)
+	binary.BigEndian.PutUint32(buf32, uint32(len(msg)))
+	err := c.Listen.Protocol().Write(c.conn, append(buf32, []byte(msg)...))
 	if err != nil {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 func (c *ConnectTcp) SetHeader(header network.Header) {
@@ -87,8 +95,9 @@ func (c *ConnectTcp) Header() network.Header {
 }
 
 func (c *ConnectTcp) SetExtData(bytes []byte) {
+	c.extData = bytes
 }
 
-func (c *ConnectTcp) ExtData() interface{} {
-	return nil
+func (c *ConnectTcp) ExtData() []byte {
+	return c.extData
 }

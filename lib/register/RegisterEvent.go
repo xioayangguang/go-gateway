@@ -26,15 +26,15 @@ func NewRegisterEvent() network.Event {
 		workerConnections:  make(map[uint32]network.Connect),
 	}
 }
-func (self *RegisterEvent) OnStart(listen network.ListenTcp) {
+func (r *RegisterEvent) OnStart(listen network.ListenTcp) {
 	log.Println("register server listening at: ", listen.Url().Origin)
 }
 
-func (*RegisterEvent) OnConnect(connect network.Connect) {
-
+func (r *RegisterEvent) OnConnect(connect network.Connect) {
+	log.Println("connect: ", connect.GetIp(), connect.GetPort())
 }
 
-func (self *RegisterEvent) OnMessage(connect network.Connect, message []byte) {
+func (r *RegisterEvent) OnMessage(connect network.Connect, message []byte) {
 	var data RegisterMessage
 	err := json.Unmarshal(message, &data)
 	if err != nil {
@@ -49,11 +49,12 @@ func (self *RegisterEvent) OnMessage(connect network.Connect, message []byte) {
 			return
 		}
 	}
+	log.Printf("Register OnMessage:%s:%v Data:%s ", network.Long2Ip(connect.GetIp()), connect.GetPort(), string(message))
 	switch data.Event {
 	case "gateway_connect":
-		self.gatewayConnect(connect, data)
+		r.gatewayConnect(connect, data)
 	case "worker_connect":
-		self.workerConnect(connect, data)
+		r.workerConnect(connect, data)
 	case "ping":
 		return
 	default:
@@ -62,66 +63,61 @@ func (self *RegisterEvent) OnMessage(connect network.Connect, message []byte) {
 	}
 }
 
-func (self *RegisterEvent) OnClose(connect network.Connect) {
-	_, hasG := self.gatewayConnections[connect.Id()]
+func (r *RegisterEvent) OnClose(connect network.Connect) {
+	_, hasG := r.gatewayConnections[connect.Id()]
 	if hasG == true {
-		delete(self.gatewayConnections, connect.Id())
-		self.broadcastAddresses(0)
+		delete(r.gatewayConnections, connect.Id())
+		r.broadcastAddresses(0)
 	}
-
-	_, hasW := self.workerConnections[connect.Id()]
+	_, hasW := r.workerConnections[connect.Id()]
 	if hasW == true {
-		delete(self.workerConnections, connect.Id())
+		delete(r.workerConnections, connect.Id())
 	}
 }
 
-func (*RegisterEvent) OnError(listen network.ListenTcp, err error) {
+func (r *RegisterEvent) OnError(listen network.ListenTcp, err error) {
 	log.Println("注册中心启动失败", err)
 }
 
 // gateway 链接
-func (self *RegisterEvent) gatewayConnect(c network.Connect, msg RegisterMessage) {
+func (r *RegisterEvent) gatewayConnect(c network.Connect, msg RegisterMessage) {
 	if msg.Address == "" {
 		println("address not found")
 		c.Close()
 		return
 	}
 	// 推入列表
-	self.gatewayConnections[c.Id()] = msg.Address
-	self.broadcastAddresses(0)
+	r.gatewayConnections[c.Id()] = msg.Address
+	r.broadcastAddresses(0)
 }
 
 // worker 链接
-func (self *RegisterEvent) workerConnect(c network.Connect, msg RegisterMessage) {
+func (r *RegisterEvent) workerConnect(c network.Connect, msg RegisterMessage) {
 	// 推入列表
-	self.workerConnections[c.Id()] = c
-	self.broadcastAddresses(0)
+	r.workerConnections[c.Id()] = c
+	r.broadcastAddresses(0)
 }
 
 /*
 向 BusinessWorker 广播 gateway 内部通讯地址
 0 全部发生
 */
-func (self *RegisterEvent) broadcastAddresses(id uint32) {
+func (r *RegisterEvent) broadcastAddresses(id uint32) {
 	type ConList struct {
 		Event     string   `json:"event"`
 		Addresses []string `json:"addresses"`
 	}
 	data := ConList{Event: "broadcast_addresses"}
-
-	for _, address := range self.gatewayConnections {
+	for _, address := range r.gatewayConnections {
 		data.Addresses = append(data.Addresses, address)
 	}
-
 	jsonByte, _ := json.Marshal(data)
-
 	if id != 0 {
-		worker := self.workerConnections[id]
-		worker.SendByte(jsonByte)
+		worker := r.workerConnections[id]
+		_ = worker.SendByte(jsonByte)
 		return
 	}
-
-	for _, worker := range self.workerConnections {
-		worker.SendByte(jsonByte)
+	for _, worker := range r.workerConnections {
+		_ = worker.SendByte(jsonByte)
 	}
 }

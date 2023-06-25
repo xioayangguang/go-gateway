@@ -44,28 +44,23 @@ func (w *WebsocketProtocol) Init() {
 
 func (w *WebsocketProtocol) OnConnect(conn net.Conn) (network.Header, error) {
 	w.cacheByte = make([]byte, 0)
-
 	// 获取协议头
 	byteHeader, err := w.getHeader(conn)
 	header := lib.MessageHeader{}
 	header.Set(string(byteHeader))
-
 	Upgrade := header.Get("Upgrade")
 	if Upgrade != "websocket" {
 		return nil, errors.New("升级的协议不是websocket")
 	}
-
 	guid := "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 	h := sha1.New()
 	_, _ = io.WriteString(h, header.Get("Sec-WebSocket-Key")+guid)
 	accept := make([]byte, 28)
 	base64.StdEncoding.Encode(accept, h.Sum(nil))
-
 	// 返回成功请求头
 	strHeader := "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
 	strHeader += "Sec-WebSocket-Accept:" + string(accept) + "\r\n\r\n"
 	_, _ = conn.Write([]byte(strHeader))
-
 	return &header, err
 }
 
@@ -110,12 +105,10 @@ func (w *WebsocketProtocol) Read(conn net.Conn) ([]byte, error) {
 	for i := 0; i < payloadLen; i++ {
 		msg[i] = payloadDataByte[i] ^ maskingKey[i%4]
 	}
-
 	if FIN == 1 {
 		// 最后的消息片断
 		return msg, err
 	}
-
 	nextMsg, err := w.Read(conn)
 	msg = append(msg, nextMsg...)
 	return msg, err
@@ -145,8 +138,8 @@ func (w *WebsocketProtocol) Write(conn net.Conn, msg []byte) error {
 		sendByte = append(sendByte, payLenByte8...)
 	}
 	sendByte = append(sendByte, msg...)
-	_, _ = conn.Write(sendByte)
-	return nil
+	_, err := conn.Write(sendByte)
+	return err
 }
 
 // 读取指定长度数据

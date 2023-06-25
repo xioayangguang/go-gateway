@@ -67,9 +67,7 @@ func GetPidForFile(key string) int {
 
 func ListenStopSignal(handle func(sig os.Signal)) {
 	sigs := make(chan os.Signal, 1)
-
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
 	go func() {
 		sig := <-sigs
 		handle(sig)

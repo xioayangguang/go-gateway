@@ -38,19 +38,17 @@ func (ws *WebSocketEvent) OnError(listen network.ListenTcp, err error) {
 func (ws *WebSocketEvent) OnStart(listen network.ListenTcp) {
 	ws.WorkerServerIp = lib.Config.Worker.Ip
 	ws.WorkerServerPort = lib.Config.Worker.Port
-
 	log.Println("ws server listening at: ", listen.Url().Origin)
 }
 
-func (ws *WebSocketEvent) GetClientId(client network.Connect) string {
-	return network.Bin2hex(network.Ip2long(ws.WorkerServerIp), ws.WorkerServerPort, client.Id())
-}
+//func (ws *WebSocketEvent) GetClientId(client network.Connect) string {
+//	return network.Bin2hex(network.Ip2long(ws.WorkerServerIp), ws.WorkerServerPort, client.Id())
+//}
 
 func (ws *WebSocketEvent) OnConnect(client network.Connect) {
-	client.SetUid(ws.GetClientId(client))
+	//client.SetClientId(ws.GetClientId(client))
 	// 添加连接池
-	Router.AddedClient(client)
-
+	CG.AddedClient(client)
 	ws.SendToWorker(client, lib.CMD_ON_CONNECT, []byte(""), 1, "")
 }
 
@@ -60,16 +58,16 @@ func (ws *WebSocketEvent) OnMessage(c network.Connect, message []byte) {
 	if extData == nil {
 		ws.SendToWorker(c, lib.CMD_ON_MESSAGE, message, 1, "")
 	} else {
-		ws.SendToWorker(c, lib.CMD_ON_MESSAGE, message, 1, string(extData.([]byte)))
+		ws.SendToWorker(c, lib.CMD_ON_MESSAGE, message, 1, string(extData))
 	}
 }
 
 func (ws *WebSocketEvent) OnClose(c network.Connect) {
 	ws.SendToWorker(c, lib.CMD_ON_CLOSE, []byte(""), 1, "")
-	Router.DeleteClient(c.Id())
+	CG.DeleteClient(c.Id())
 }
 
-// 发送信息的worker
+// SendToWorker 发送信息的worker
 func (ws *WebSocketEvent) SendToWorker(client network.Connect, cmd uint8, body []byte, flag uint8, ExtData string) {
 	msg := lib.GatewayMessage{
 		PackageLen:   28 + uint32(len(body)),
@@ -85,14 +83,16 @@ func (ws *WebSocketEvent) SendToWorker(client network.Connect, cmd uint8, body [
 		ExtData:      ExtData,
 		Body:         body,
 	}
-	worker, err := Router.GetWorker(client)
-	if err != nil {
-		// worker 找不到 获取连接
+	worker, err := CG.GetWorker(client)
+	if err != nil { // worker 找不到 获取连接
 		log.Println("主动断开客户端连接 err:", err)
 		client.Close()
-		Router.DeleteClient(client.Id())
+		CG.DeleteClient(client.Id())
 		return
 	}
 	log.Println("发信息给worker", string(msg.Body))
-	worker.SendByte(lib.GatewayMessageToByte(msg))
+	err = worker.SendByte(lib.GatewayMessageToByte(msg))
+	if err != nil {
+		log.Println("发信息给worker", err)
+	}
 }

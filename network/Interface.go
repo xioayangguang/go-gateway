@@ -24,15 +24,18 @@ type Connect interface {
 	GetCon() net.Conn
 	Close()
 	Id() uint32
-	SetUid(uid string)
-	Uid() string
-	Send(msg interface{}) bool
-	SendByte(msg []byte) bool
-	SendString(msg string) bool
+	SetUserId(uid uint64)
+	UserId() uint64
+	GroupsId() map[uint64]struct{}
+	SetGroupId(id uint64)
+	DeleteGroupId(id uint64)
+	Send(msg interface{}) error
+	SendByte(msg []byte) error
+	SendString(msg string) error
 	GetIp() uint32
 	GetPort() uint16
 	SetExtData(bytes []byte)
-	ExtData() interface{}
+	ExtData() []byte
 }
 
 type Event interface {

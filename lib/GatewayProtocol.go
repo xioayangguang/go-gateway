@@ -32,7 +32,7 @@ const CMD_DESTROY = 8
 // 发给gateway，通知用户session更新
 const CMD_UPDATE_SESSION = 9
 
-// 获取在线状态
+// 获取所有在线client_id的session，client_id为 key
 const CMD_GET_ALL_CLIENT_SESSIONS = 10
 
 // 判断是否在线
@@ -59,7 +59,7 @@ const CMD_LEAVE_GROUP = 21
 // 向组成员发消息
 const CMD_SEND_TO_GROUP = 22
 
-// 获取组成员
+// 获取组成员所有在线client_id的session
 const CMD_GET_CLIENT_SESSIONS_BY_GROUP = 23
 
 // 获取组在线连接数
@@ -109,10 +109,9 @@ type GatewayMessage struct {
 	ConnectionId uint32
 	Flag         uint8
 	GatewayPort  uint16
-
-	ExtLen  uint32
-	ExtData string
-	Body    []byte
+	ExtLen       uint32
+	ExtData      string
+	Body         []byte
 }
 
 func ToGatewayMessage(data []byte) GatewayMessage {
@@ -136,7 +135,6 @@ func ToGatewayMessage(data []byte) GatewayMessage {
 
 func GatewayMessageToByte(msg GatewayMessage) []byte {
 	var msgByte []byte
-
 	value := reflect.ValueOf(msg)
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Field(i)

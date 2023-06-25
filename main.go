@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"goworker/apps"
+	"goworker/app"
 	"goworker/lib"
 	"goworker/lib/gateway"
 	"goworker/lib/register"
@@ -19,7 +19,7 @@ func main() {
 	argsLen := len(os.Args)
 	fmt.Println(argsLen)
 	if argsLen < 2 {
-		panic("长度错误")
+		panic("参数长度错误")
 	} else {
 		switch os.Args[1] {
 		case "registerStart":
@@ -54,13 +54,14 @@ func registerStop() {
 	err := utils.StopSignal("register")
 	if err != nil {
 		fmt.Println("停止失败")
+		return
 	}
 	fmt.Println("停止成功")
 }
 
 func workerStart() {
 	lib.Config.SetInput()
-	lib.BussinessEvent = &apps.MainEvent{}
+	lib.BussinessEvent = &app.MainEvent{}
 	// 连接到注册中心
 	r := tcp.NewClient(lib.Config.Register.Origin)
 	r.SetEvent(worker.NewRegisterEvent())
@@ -96,6 +97,7 @@ func gatewayStop() {
 	err := utils.StopSignal("gateway")
 	if err != nil {
 		fmt.Println("停止失败")
+		return
 	}
 	fmt.Println("停止成功")
 }
